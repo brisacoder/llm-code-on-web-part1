@@ -1,138 +1,49 @@
-# Emscripten Starter Pack
+# Emscripten Starter Pack — Roadmap
 
-This repository contains a **complete starter environment** for learning and teaching how to compile C programs into **WebAssembly** using the [Emscripten SDK](https://emscripten.org/).
+This repository is a hands-on path from “What is WebAssembly?” to a tiny JS ⇄ Wasm demo you can run locally (browser or Node/WASI). The top-level README is a **roadmap**; each section links to focused docs.
 
-It is designed for students in a lecture/lab setting. Everything needed is provided: C source code, build scripts, HTML scaffolding, and detailed installation instructions.
+## 0) Install & Run
+- 📦 [INSTALL.md](./INSTALL.md) — prerequisites, local dev server, quick sanity checks.
+- ▶️ `index.html` — minimal page that instantiates a prebuilt `.wasm` and does a JS ⇄ Wasm round-trip.
 
----
+## 1) Foundations (start here)
+- 🧭 [intro_to_wasm.md](./intro_to_wasm.md) — **lecture intro**: what Wasm is, how it runs, browser vs Node/WASI, memory model, imports/exports, and when to choose Emscripten vs WASI.
 
-## 📦 Contents
+## 2) Architecture & Mental Models
+- 🧩 [illusion.md](./illusion.md) — “illusion stack”: CPython/C → libc → (Emscripten or WASI) → Wasm → engine → host.
+- 🔁 [round_trip_flow.md](./round_trip_flow.md) — JS → Wasm → JS back-call (imports) and return values.
+- 🧵 [syscall_roundtrip.md](./syscall_roundtrip.md) — one syscall’s journey (Python `open`) across the boundary.
 
-* **`INSTALL.md`** — step-by-step guide for installing the Emscripten SDK on **Ubuntu** and **Windows**.
-* **`README.md`** — this document.
-* **`c/hello_stdio.c`** — a simple C program using `printf`, compiled into a WebAssembly module with HTML wrapper.
-* **`c/hello_export.c`** — a C program that exports a pure function `add(int, int)` to be called directly from JavaScript.
-* **`web/index.html`** — minimal webpage that loads `hello_export.wasm` and calls the exported function.
-* **`scripts/build.sh`** — Bash build script (Linux/macOS).
-* **`scripts/build.ps1`** — PowerShell build script (Windows).
-* **`dist/`** — output folder for build artifacts (`.html`, `.wasm`).
+## 3) Demos & Labs
+- 🌐 **Browser demo**: open `index.html` with a local server (see INSTALL).
+- 🟢 **Node + WASI demo**: coming next (WASI entrypoint + preopens).
 
----
+## 4) Tooling Choices (cheat sheet)
+- **Compile to Wasm**
+  - Emscripten (C/C++/CPython + browser shims)
+  - Rust (`wasm32-unknown-unknown`, `wasm32-wasi`)
+  - Zig / Clang + WASI sysroot
+- **Runtimes**
+  - Browser engines (V8/SpiderMonkey/JavaScriptCore)
+  - Node’s `node:wasi`, Wasmtime, Wasmer, WasmEdge
 
-## 🚀 Quick Start
+## 5) Roadmap
+- [ ] Add Node + WASI sample (`wasi_main.wasm` + `node:wasi` runner)
+- [ ] Show SIMD and Threads notes (COOP/COEP for browsers)
+- [ ] Add “passing TypedArrays / shared memory” example
+- [ ] Benchmark harness (JS vs Wasm kernel)
 
-### 1. Install the SDK
-
-Follow [INSTALL.md](./INSTALL.md) carefully for your platform (Ubuntu or Windows).
-Verify installation with:
-
-```bash
-emcc -v
-```
-
----
-
-### 2. Build the Examples
-
-#### On Linux/macOS
-
-```bash
-source ~/emsdk/emsdk_env.sh
-bash scripts/build.sh
-```
-
-#### On Windows (PowerShell)
-
-```powershell
-.\path\to\emsdk\emsdk_env.ps1
-powershell -ExecutionPolicy Bypass -File scripts\build.ps1
-```
-
-> ⚠️ If `emcc` is not found, make sure you’ve sourced `emsdk_env.sh` (Linux/macOS) or run `emsdk_env.ps1` (Windows).
-
----
-
-### 3. Run in a Browser
-
-Serve the repo root with a simple HTTP server:
+## Repository Layout
 
 ```bash
-python3 -m http.server 8080
+./
+├─ emscripten-starter-pack/ # (placeholder for future samples)
+├─ index.html # tiny browser demo
+├─ INSTALL.md # setup and run instructions
+├─ intro_to_wasm.md # lecture intro (start here)
+├─ illusion.md # layers/illusion diagram (Mermaid)
+├─ round_trip_flow.md # JS ⇄ Wasm round-trip (Mermaid)
+├─ syscall_roundtrip.md # syscall sequence (Mermaid)
+├─ README.md # this roadmap
+└─ LICENSE / .gitignore
 ```
-
-Open your browser at:
-
-* [`http://localhost:8080/dist/hello.html`](http://localhost:8080/dist/hello.html)
-  → Shows **“Hello, WebAssembly!”** in the browser console.
-
-* [`http://localhost:8080/web/index.html`](http://localhost:8080/web/index.html)
-  → Loads `hello_export.wasm` and computes `_add(7,5) = 12`.
-
----
-
-## 🧪 What You’ll Learn
-
-* How **Emscripten** compiles C to WebAssembly.
-* Difference between:
-
-  * **stdio programs** (`printf` → compiled HTML runner).
-  * **pure functions** exported from C and called directly from JS.
-* The role of **emsdk environment scripts** (`emsdk_env.sh` / `emsdk_env.ps1`).
-* Basics of loading and calling Wasm modules in modern browsers.
-
----
-
-## 🛠️ Troubleshooting
-
-| Symptom                       | Cause                                 | Fix                                                                               |
-| ----------------------------- | ------------------------------------- | --------------------------------------------------------------------------------- |
-| `emcc: command not found`     | Environment not loaded                | Run `source ./emsdk_env.sh` or `.\emsdk_env.ps1`                                  |
-| Browser shows blank page      | Accessing file:// instead of http\:// | Always use an HTTP server (e.g., `python3 -m http.server`)                        |
-| Import error for `_add`       | Wrong build flags                     | Re-run provided build script                                                      |
-| SSL/Proxy issues cloning repo | Git cannot reach GitHub               | Configure `git config --global http.sslBackend schannel` (Windows) or check proxy |
-
----
-
-## 📚 References
-
-* [Emscripten Documentation](https://emscripten.org/docs/getting_started/index.html)
-* [WebAssembly.org](https://webassembly.org/)
-* [emsdk GitHub Repo](https://github.com/emscripten-core/emsdk)
-
----
-
-## 🎓 Teaching Tip
-
-When running this in class:
-
-1. Show what happens when `emcc` is missing (`command not found`).
-2. Source the environment script, rerun, and show it works.
-3. Let students compare the **generated HTML runner** (`hello.html`) with the **standalone wasm** loaded in `index.html`.
-
-This reinforces why Emscripten’s environment setup matters and highlights two common workflows.
-
-## Reference Diagram
-
-```mermaid
-graph TD
-  A["C source (hello_stdio.c, hello_export.c)"] --> B["Emscripten compiler (emcc)"]
-  B --> C["Artifacts in dist/"]
-  C --> D["hello.html (stdio runner)"]
-  C --> E["hello_export.wasm (standalone Wasm)"]
-
-  %% Browser path
-  D --> F["Browser"]
-  E --> G["web/index.html"]
-  G --> F
-
-  %% Runtime in browser
-  F --> H["WebAssembly engine / JIT"]
-  H --> I["CPU execution (sandboxed)"]
-
-  %% Optional: Node/WASI path (if you later show server runtimes)
-  E -. optional .-> J["Node.js or WASI runtime"]
-  J -. calls .-> I
-```
-
-
-
