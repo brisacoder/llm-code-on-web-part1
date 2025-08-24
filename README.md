@@ -111,5 +111,28 @@ When running this in class:
 
 This reinforces why Emscripten’s environment setup matters and highlights two common workflows.
 
+## Reference Diagram
+
+```mermaid
+graph TD
+  A["C source (hello_stdio.c, hello_export.c)"] --> B["Emscripten compiler (emcc)"]
+  B --> C["Artifacts in dist/"]
+  C --> D["hello.html (stdio runner)"]
+  C --> E["hello_export.wasm (standalone Wasm)"]
+
+  %% Browser path
+  D --> F["Browser"]
+  E --> G["web/index.html"]
+  G --> F
+
+  %% Runtime in browser
+  F --> H["WebAssembly engine / JIT"]
+  H --> I["CPU execution (sandboxed)"]
+
+  %% Optional: Node/WASI path (if you later show server runtimes)
+  E -. optional .-> J["Node.js or WASI runtime"]
+  J -. calls .-> I
+```
+
 
 
