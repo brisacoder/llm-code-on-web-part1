@@ -1,3 +1,5 @@
+# Round Trip Flow
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -14,7 +16,7 @@ sequenceDiagram
     Note right of Wasm: Validate & call compiled function
     Wasm->>JIT: Use precompiled machine code
     JIT->>CPU: Execute native instructions
-    CPU-->>Wasm: Compute partial result (12)
+    CPU-->>Wasm: Produce sum = 12
 
     Note over Wasm,JS: Back path: Wasm calls an imported JS function
     Wasm->>JS: env.log_i32(12)
