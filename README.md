@@ -1,2 +1,2 @@
-# wasm-lecture
+# WASM Lecture
 WASM Lecture
