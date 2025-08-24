@@ -29,16 +29,80 @@ graph TD
 * **Memory model**: A linear memory (resizable array of bytes). JS can view it as `ArrayBuffer`; native code uses pointers/offsets.
 * **Sandbox**: No raw syscalls; all host access is explicitly imported.
 
-## Emscripten vs. WASI (which to choose?)
+Perfect — here’s a rewritten section you can paste into your `intro_to_wasm.md`.
+It introduces **Emscripten** and **WASI** with definitions first, then does a side-by-side “when to use” comparison.
 
-* **Emscripten**: Best for **browser** targets and ecosystems that assume POSIX APIs (CPython, NumPy, SDL).
+---
 
-  * Provides **libc shims**: files (virtual FS/IndexedDB), sockets (WebSockets), stdout/console bridges.
-  * Pairs well with front-end UIs and JS interop.
-* **WASI**: Best for **server/CLI** style modules where you want portable syscalls (files, clocks, random, args, env) without browser-specific shims.
+## Emscripten vs. WASI — What They Are and When to Use Them
 
-  * Works great with Node’s `node:wasi`, Wasmtime, etc.
-  * Cleaner model for headless compute and edge runtimes.
+### What is **Emscripten**?
+
+* **Definition**: A compiler toolchain (built on LLVM/Clang) that takes C/C++ (and anything that compiles to LLVM IR) and outputs WebAssembly plus a layer of JavaScript “glue code.”
+* **How it works**:
+
+  * Replaces the C standard library (`libc`) calls with **JavaScript shims** (virtual filesystem, sockets via WebSockets, stdout → browser console).
+  * Lets legacy codebases believe they are running on a POSIX-like OS, even though they’re inside a browser sandbox.
+* **Use cases**: Porting large C/C++ projects to the web (e.g., CPython → Pyodide, SDL games, OpenCV in browser, NumPy).
+* **Mental model**: *Fake a Unix-like OS in the browser by redirecting syscalls through JavaScript.*
+
+---
+
+### What is **WASI (WebAssembly System Interface)**?
+
+* **Definition**: A standardized set of system calls for WebAssembly outside the browser.
+* **How it works**:
+
+  * Defines a portable API (`wasi_snapshot_preview1`) for files, directories, clocks, randomness, args/env, etc.
+  * Runtimes (like Wasmtime, Node’s `node:wasi`, Wasmer, WasmEdge) implement those APIs and forward them safely to the host OS.
+* **Use cases**: Headless/server-side Wasm programs, CLI tools, micro-VMs at the edge, lightweight container replacements.
+* **Mental model**: *Give Wasm modules a minimal, standardized “operating system” that works across all runtimes.*
+
+---
+
+### Comparison — When to Choose Each
+
+| Aspect             | **Emscripten**                              | **WASI**                                     |
+| ------------------ | ------------------------------------------- | -------------------------------------------- |
+| Primary target     | **Browsers** (integrated with JS/DOM)       | **Servers / CLIs / Edge runtimes**           |
+| System calls       | Shimmed through **JavaScript**              | Standardized **portable syscalls**           |
+| Filesystem         | Virtual FS, IndexedDB, in-memory            | Real host directories (sandboxed pre-opens)  |
+| Networking         | WebSockets, XHR (emulated sockets)          | Host TCP/UDP (if runtime implements)         |
+| Typical toolchains | `emcc` (Emscripten compiler)                | Clang, Rust, Zig targeting `wasm32-wasi`     |
+| Best for…          | Bringing **existing C/C++ code** to the web | Writing **new headless/server apps** in Wasm |
+
+---
+
+**One-liner takeaway:**
+
+* Use **Emscripten** when you want Wasm in the **browser** and need JS shims for POSIX-style code.
+* Use **WASI** when you want Wasm on the **server/edge** with a clean, portable syscall layer.
+
+```mermaid
+graph LR
+  %% Emscripten path on the left, WASI path on the right
+
+  subgraph A[Emscripten to Browser]
+    A1[Source code C or C++] --> A2[Emscripten compile to Wasm]
+    A2 --> A3[Wasm module]
+    A3 --> A4[Browser Wasm engine]
+    A4 --> A5[JIT or AOT native code]
+    A4 --> A6[JavaScript shims and virtual filesystem]
+    A5 --> A7[CPU executes in sandbox]
+    A6 --> A7
+  end
+
+  subgraph B[WASI to Runtime or OS]
+    B1[Source code C or Rust or Zig] --> B2[Compile to Wasm target wasm32 wasi]
+    B2 --> B3[Wasm module]
+    B3 --> B4[Wasm runtime Wasmtime or Node wasi or Wasmer]
+    B4 --> B5[WASI imports files time random args env]
+    B4 --> B6[JIT or AOT native code]
+    B6 --> B7[CPU executes in sandbox]
+    B5 --> B7
+  end
+```
+
 
 ## Browser vs. Node (mental model)
 
