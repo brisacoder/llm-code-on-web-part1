@@ -1,12 +1,3 @@
-Perfect—let’s turn your repo into a clean, link-driven roadmap and add a lecture-ready intro.
-
-Below are two drop-in files:
-
----
-
-# ✅ New `README.md` (roadmap style)
-
-```markdown
 # Emscripten Starter Pack — Roadmap
 
 This repository is a hands-on path from “What is WebAssembly?” to a tiny JS ⇄ Wasm demo you can run locally (browser or Node/WASI). The top-level README is a **roadmap**; each section links to focused docs.
