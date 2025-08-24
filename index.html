@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Wasm Round Trip Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    button { padding: 0.5rem 1rem; }
+    #out { margin-top: 1rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>JS ⇄ Wasm Round Trip</h1>
+  <p>This demo calls a Wasm function that calls back into JS, then returns a value.</p>
+
+  <button id="run">Run add_and_log(7, 5)</button>
+  <div id="out">Result: (not run)</div>
+
+  <script type="module">
+    const out = document.getElementById("out");
+    const runBtn = document.getElementById("run");
+
+    // Import object: functions JS exposes to Wasm
+    const imports = {
+      env: {
+        log_i32: (x) => {
+          console.log("WASM says:", x);        // Back path: Wasm -> JS
+        }
+      }
+    };
+
+    // Instantiate the precompiled Wasm file (same origin)
+    let instance;
+    async function init() {
+      // For local testing, serve with a tiny HTTP server so fetch works.
+      const response = await fetch("./add_and_log.wasm");
+      const { instance: inst } = await WebAssembly.instantiateStreaming(response, imports);
+      instance = inst;
+    }
+
+    runBtn.addEventListener("click", async () => {
+      if (!instance) { await init(); }
+
+      // JS -> Wasm (forward path)
+      const result = instance.exports.add_and_log(7, 5);
+
+      // Wasm -> JS (already happened via env.log_i32)
+      // Wasm -> JS return value (back to caller)
+      out.textContent = `Result: ${result}`;
+    });
+
+    // Optional: eager load to catch errors early
+    init().catch(err => {
+      console.error("Failed to init Wasm:", err);
+      out.textContent = "Init error (see console)";
+    });
+  </script>
+</body>
+</html>
