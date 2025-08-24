@@ -13,13 +13,16 @@ Think of it as **“LLVM-like bytecode for the web and beyond”** with strict s
 - **Safety**: Memory-safe, capability-based host access (you only get what’s imported).
 
 ## How execution works (high level)
+
 ```mermaid
+
 graph TD
-  A[Source: C/C++/Rust/Zig] --> B[Wasm binary (.wasm)]
-  B --> C[Wasm engine (browser or runtime)]
-  C --> D[JIT/AOT native instructions]
-  D --> E[CPU executes within sandbox]
-  C --> F[Host imports (files, time, console)]
+  A[Source languages] --> B[Wasm binary]
+  B --> C[Wasm engine]
+  C --> D[Native code via JIT or AOT]
+  D --> E[CPU executes inside sandbox]
+  C --> F[Host imports: files, time, console]
+  click A "intro_to_wasm.md" "Open intro"
 ```
 
 * **Imports/Exports**: Wasm modules **export** functions and **import** host functions (JS in browsers; WASI or custom hosts in runtimes).
