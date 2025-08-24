@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Standalone WASM: call _add(7,5)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    #out { font-weight: 600; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Standalone WebAssembly Demo</h1>
+  <p>This page loads <code>hello_export.wasm</code> and calls its exported function <code>_add</code>.</p>
+  <button id="run">Run</button>
+  <div id="out">Result: (not run)</div>
+
+  <script type="module">
+    const out = document.getElementById('out');
+    const btn = document.getElementById('run');
+
+    async function loadWasm() {
+      const resp = await fetch('../dist/hello_export.wasm');
+      if (!resp.ok) throw new Error('Failed to fetch hello_export.wasm');
+      const bytes = await resp.arrayBuffer();
+
+      // No imports required for this module (pure function), but engines
+      // expect an object.
+      const { instance } = await WebAssembly.instantiate(bytes, {});
+
+      // Export name is `_add` (note the underscore) when built with EXPORTED_FUNCTIONS=_add
+      return instance.exports._add;
+    }
+
+    let addFn = null;
+    loadWasm()
+      .then(fn => { addFn = fn; })
+      .catch(err => {
+        console.error(err);
+        out.textContent = 'Failed to load WASM (see console)';
+      });
+
+    btn.addEventListener('click', () => {
+      if (!addFn) {
+        out.textContent = 'WASM not loaded yet. Try again in a moment.';
+        return;
+      }
+      const result = addFn(7, 5);
+      out.textContent = `Result: ${result}`;
+    });
+  </script>
+</body>
+</html>
