@@ -236,7 +236,30 @@ Open `hello.html` in a browser. You should see `"Hello, WebAssembly!"` printed.
 
 ---
 
-## 6. References
+## 6. Reference Diagram
+
+```mermaid
+graph TD
+  A["C source (hello_stdio.c, hello_export.c)"] --> B["Emscripten compiler (emcc)"]
+  B --> C["Artifacts in dist/"]
+  C --> D["hello.html (stdio runner)"]
+  C --> E["hello_export.wasm (standalone Wasm)"]
+
+  %% Browser path
+  D --> F["Browser"]
+  E --> G["web/index.html"]
+  G --> F
+
+  %% Runtime in browser
+  F --> H["WebAssembly engine / JIT"]
+  H --> I["CPU execution (sandboxed)"]
+
+  %% Optional: Node/WASI path (if you later show server runtimes)
+  E -. optional .-> J["Node.js or WASI runtime"]
+  J -. calls .-> I
+```
+
+## 7. References
 
 * Official docs: [https://emscripten.org/docs/getting\_started/downloads.html](https://emscripten.org/docs/getting_started/downloads.html)
 * GitHub repo: [https://github.com/emscripten-core/emsdk](https://github.com/emscripten-core/emsdk)
