@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <h1>JS ⇄ Wasm Round Trip</h1>
+  <h1>JS ↔ Wasm Round Trip</h1>
   <p>This demo calls a Wasm function that calls back into JS, then returns a value.</p>
 
   <button id="run">Run add_and_log(7, 5)</button>
@@ -30,13 +30,23 @@
       }
     };
 
-    // Instantiate the precompiled Wasm file (same origin)
+    // Instantiate the precompiled Wasm file (same folder)
     let instance;
     async function init() {
-      // For local testing, serve with a tiny HTTP server so fetch works.
       const response = await fetch("./add_and_log.wasm");
-      const { instance: inst } = await WebAssembly.instantiateStreaming(response, imports);
-      instance = inst;
+      // Prefer streaming when server sets application/wasm; fallback otherwise.
+      try {
+        if (WebAssembly.instantiateStreaming) {
+          const { instance: inst } = await WebAssembly.instantiateStreaming(response, imports);
+          instance = inst;
+          return;
+        }
+        throw new Error("instantiateStreaming not available");
+      } catch (e) {
+        const bytes = await response.arrayBuffer();
+        const { instance: inst } = await WebAssembly.instantiate(bytes, imports);
+        instance = inst;
+      }
     }
 
     runBtn.addEventListener("click", async () => {

@@ -1,49 +1,39 @@
-# Emscripten Starter Pack — Roadmap
+# WebAssembly– Roadmap
 
-This repository is a hands-on path from “What is WebAssembly?” to a tiny JS ⇄ Wasm demo you can run locally (browser or Node/WASI). The top-level README is a **roadmap**; each section links to focused docs.
+This repo takes you from “What is WebAssembly?” to two small, working browser demos. Use `install.md` for setup and running.
 
 ## 0) Install & Run
-- 📦 [INSTALL.md](./INSTALL.md) — prerequisites, local dev server, quick sanity checks.
-- ▶️ `index.html` — minimal page that instantiates a prebuilt `.wasm` and does a JS ⇄ Wasm round-trip.
+- install.md: SDK setup, local server, and quickstart for both demos
+- web/index.html: minimal JS ↔ Wasm round-trip (build via `scripts/build_add_and_log.*`)
 
-## 1) Foundations (start here)
-- 🧭 [intro_to_wasm.md](./intro_to_wasm.md) — **lecture intro**: what Wasm is, how it runs, browser vs Node/WASI, memory model, imports/exports, and when to choose Emscripten vs WASI.
+## 1) Foundations
+- intro_to_wasm.md: how Wasm runs; imports/exports; browser vs Node/WASI
 
-## 2) Architecture & Mental Models
-- 🧩 [illusion.md](./illusion.md) — “illusion stack”: CPython/C → libc → (Emscripten or WASI) → Wasm → engine → host.
-- 🔁 [round_trip_flow.md](./round_trip_flow.md) — JS → Wasm → JS back-call (imports) and return values.
-- 🧵 [syscall_roundtrip.md](./syscall_roundtrip.md) — one syscall’s journey (Python `open`) across the boundary.
+## 2) Architecture
+- intro_to_wasm.md#os-illusion-stack-view: OS Illusion stack (browser vs WASI)
+- intro_to_wasm.md#syscall-round-trip-sequence: Syscall Round Trip
+- round_trip_flow.md: JS ↔ Wasm ↔ JS back-call and return values
 
-## 3) Demos & Labs
-- 🌐 **Browser demo**: open `index.html` with a local server (see INSTALL).
-- 🟢 **Node + WASI demo**: coming next (WASI entrypoint + preopens).
+## 3) Demos
+- Top-level demo: build `web/add_and_log.wasm` with `scripts/build_add_and_log.ps1` (or `.sh`), then open `web/index.html` via a local server
+- Emscripten pack demo: run `emscripten-starter-pack/scripts/build.*` and open `emscripten-starter-pack/web/index.html`
 
-## 4) Tooling Choices (cheat sheet)
-- **Compile to Wasm**
-  - Emscripten (C/C++/CPython + browser shims)
-  - Rust (`wasm32-unknown-unknown`, `wasm32-wasi`)
-  - Zig / Clang + WASI sysroot
-- **Runtimes**
-  - Browser engines (V8/SpiderMonkey/JavaScriptCore)
-  - Node’s `node:wasi`, Wasmtime, Wasmer, WasmEdge
-
-## 5) Roadmap
-- [ ] Add Node + WASI sample (`wasi_main.wasm` + `node:wasi` runner)
-- [ ] Show SIMD and Threads notes (COOP/COEP for browsers)
-- [ ] Add “passing TypedArrays / shared memory” example
-- [ ] Benchmark harness (JS vs Wasm kernel)
-
-## Repository Layout
-
-```bash
+## Layout
+```
 ./
-├─ emscripten-starter-pack/ # (placeholder for future samples)
-├─ index.html # tiny browser demo
-├─ INSTALL.md # setup and run instructions
-├─ intro_to_wasm.md # lecture intro (start here)
-├─ illusion.md # layers/illusion diagram (Mermaid)
-├─ round_trip_flow.md # JS ⇄ Wasm round-trip (Mermaid)
-├─ syscall_roundtrip.md # syscall sequence (Mermaid)
-├─ README.md # this roadmap
+├─ web/
+│  ├─ index.html                 # top-level demo (loads add_and_log.wasm)
+│  └─ c/add_and_log.c            # source for the demo
+├─ scripts/
+│  ├─ build_add_and_log.ps1
+│  └─ build_add_and_log.sh
+├─ emscripten-starter-pack/
+│  ├─ c/                         # Emscripten samples
+│  ├─ scripts/                   # build.sh / build.ps1
+│  └─ web/index.html             # loads dist/hello_export.wasm
+├─ install.md
+├─ intro_to_wasm.md
+├─ round_trip_flow.md
+├─ README.md
 └─ LICENSE / .gitignore
 ```

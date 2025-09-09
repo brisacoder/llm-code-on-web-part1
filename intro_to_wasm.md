@@ -29,9 +29,6 @@ graph TD
 * **Memory model**: A linear memory (resizable array of bytes). JS can view it as `ArrayBuffer`; native code uses pointers/offsets.
 * **Sandbox**: No raw syscalls; all host access is explicitly imported.
 
-Perfect — here’s a rewritten section you can paste into your `intro_to_wasm.md`.
-It introduces **Emscripten** and **WASI** with definitions first, then does a side-by-side “when to use” comparison.
-
 ---
 
 ## Emscripten vs. WASI — What They Are and When to Use Them
@@ -130,16 +127,10 @@ graph LR
 ## Where this repo fits
 
 1. Read this intro.
-2. Skim the **illusion stack** to understand how high-level runtimes (e.g., Python) “believe” they have an OS.
-
-   * See: [illusion.md](./illusion.md)
-3. Study the **round-trip flow** (JS → Wasm → JS import → return).
-
-   * See: [round\_trip\_flow.md](./round_trip_flow.md)
-4. Review a **syscall’s journey** across boundaries.
-
-   * See: [syscall\_roundtrip.md](./syscall_roundtrip.md)
-5. Follow [INSTALL.md](./INSTALL.md) and run `index.html`.
+2. Skim the OS Illusion stack below to see how high-level runtimes (e.g., Python) “believe” they have an OS.
+3. Study the round-trip flow (JS → Wasm → JS import → return) in `round_trip_flow.md`.
+4. Review a syscall’s journey across boundaries in the Syscall Round Trip section below.
+5. Follow [install.md](./install.md) and run the demos.
 
 ## Mini-FAQ
 
@@ -150,4 +141,68 @@ graph LR
 ---
 
 **Next:** head back to the [README roadmap](./README.md) and pick your path (browser demo or Node/WASI).
+
+---
+
+## OS Illusion (stack view)
+
+High-level runtimes think they run atop an OS. In the browser, Emscripten provides JS shims and a virtual filesystem; in servers, WASI-capable runtimes expose a minimal, portable syscall layer.
+
+```mermaid
+graph TD
+  A["Python (CPython)"] --> B["CPython runtime (C)"]
+  B --> C["Python C API and C extensions"]
+  C --> D["libc / POSIX"]
+  D --> E["Emscripten shims or WASI libc"]
+  E --> F["WebAssembly (.wasm)"]
+  F --> G["Wasm engine / JIT"]
+  G --> H["Host interface"]
+  H --> I["Browser: JS shims, virtual FS, IndexedDB"]
+  H --> J["WASI runtime: Wasmtime, Node, WasmEdge"]
+  I --> K["OS kernel / hardware"]
+  J --> K["OS kernel / hardware"]
+```
+
+Key takeaways:
+- Browser path: libc calls funnel into JS glue (Emscripten) and browser APIs; no raw syscalls.
+- WASI path: libc targets WASI; the runtime mediates access to real OS resources via sandboxed pre-opens.
+
+---
+
+## Syscall Round Trip (sequence)
+
+How a single open() flows from user code down to the host and back.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Py as Python code
+  participant CP as CPython runtime
+  participant Libc as libc
+  participant Glue as Emscripten/WASI glue
+  participant Wasm as Wasm engine
+  participant Host as Host interface
+  participant OS as OS kernel
+
+  Py->>CP: open("data.txt")
+  CP->>Libc: fopen / open
+  Libc->>Glue: shimmed call
+  Glue->>Wasm: enter Wasm boundary
+  Wasm->>Host: imported function
+  alt Browser build
+    Host->>OS: storage API / IndexedDB
+  else WASI runtime
+    Host->>OS: native syscall (sandboxed)
+  end
+  OS-->>Host: file handle
+  Host-->>Wasm: return value
+  Wasm-->>Glue: pass back result
+  Glue-->>Libc: libc return
+  Libc-->>CP: fd or FILE*
+  CP-->>Py: Python file object
+```
+
+Notes:
+- In browsers, the “OS” is emulated via JS; persistence often uses IndexedDB or in-memory FS.
+- In WASI, access is explicit and limited; directories must be pre-opened by the host.
 

@@ -8,6 +8,7 @@ if ! command -v emcc >/dev/null 2>&1; then
 fi
 
 # Build printf example (generates .html + .js + .wasm into dist/)
+mkdir -p dist
 echo "[1/2] Building hello_stdio.c -> dist/hello.html"
 emcc c/hello_stdio.c -o dist/hello.html
 

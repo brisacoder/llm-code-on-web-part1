@@ -1,3 +1,41 @@
+# Install & Run (Lecture Quickstart)
+
+This guide has two parts:
+- Quickstart to build and run the demos (with a local server).
+- Detailed Emscripten SDK install steps for Windows and Linux.
+
+---
+
+## Quickstart: Run the Browser Demos
+
+Prerequisites:
+- Emscripten SDK installed and environment loaded so `emcc` is on PATH (see below if needed).
+- A local static file server (browsers block `fetch` from `file://`).
+
+Start a server from the repo root (pick one):
+- Python: `python -m http.server 8000` (or `py -m http.server 8000` on Windows)
+- Node: `npx serve .`
+- VS Code: Live Server extension
+
+1) Top-level JS ↔ Wasm demo
+- Build the Wasm once:
+  - PowerShell: `scripts/build_add_and_log.ps1`
+  - Bash: `scripts/build_add_and_log.sh`
+- Open: `http://localhost:8000/web/index.html`
+- Click “Run”. You should see console log “WASM says: 12” and “Result: 12”.
+
+2) Emscripten Starter Pack demo
+- Build:
+  - PowerShell: `emscripten-starter-pack/scripts/build.ps1`
+  - Bash: `emscripten-starter-pack/scripts/build.sh`
+- Open: `http://localhost:8000/emscripten-starter-pack/web/index.html`
+
+Troubleshooting:
+- If you open via `file://`, you’ll see CORS errors like “CORS request not http”. Always use `http://localhost`.
+- In DevTools Network tab, ensure `.wasm` files return 200 and paths match the HTML.
+
+---
+
 # Installing the Emscripten SDK (emsdk) on Ubuntu and Windows
 
 The **Emscripten SDK** provides all the tools required to compile C/C++ (and other languages via LLVM) to **WebAssembly** (`.wasm`). It bundles `clang`, `node`, `python`, and utilities like `emcc`.
@@ -174,16 +212,11 @@ Each new shell must load the environment. Run:
 .\emsdk_env.ps1
 ```
 
-To make it permanent:
+To make it permanent run with Admin privileges
 
-* Right-click **This PC → Properties → Advanced system settings → Environment Variables**.
-* Add a new **User variable**:
-
-  * Name: `EMSDK`
-  * Value: `C:\Users\<YourName>\emsdk`
-* Append `%EMSDK%\upstream\emscripten` and `%EMSDK%\node\12.x.x_64bit\bin` to your `PATH`.
-
-**Pitfall:** Forgetting this means `emcc` will not be found after reboot.
+```powershell
+.\emsdk.ps1 activate latest --system
+```
 
 ---
 
@@ -194,9 +227,18 @@ In a fresh PowerShell window:
 ```powershell
 emcc -v
 ```
+You should see something like: 
 
-You should see version information. If not:
+```powershell
+emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 4.0.14 (96371ed7888fc78c040179f4d4faa82a6a07a116)
+clang version 22.0.0git (https:/github.com/llvm/llvm-project 1cc84bcc08f723a6ba9d845c3fed1777547f45f9)
+Target: wasm32-unknown-emscripten
+Thread model: posix
+```
 
+If not:
+
+* You might need a reboot, I did. 
 * Ensure you ran `.\emsdk_env.ps1`.
 * Check `PATH` includes Emscripten directories.
 
@@ -214,25 +256,36 @@ You should see version information. If not:
 
 ---
 
-## 5. Quick Sanity Test
+## 5. Quick Sanity Check
 
-Create a file `hello.c`:
+Use the existing sample at `emscripten-starter-pack/c/hello_stdio.c`.
 
-```c
-#include <stdio.h>
-int main() {
-  printf("Hello, WebAssembly!\\n");
-  return 0;
-}
-```
-
-Compile with:
+Option A — use the provided build script (generates both demos under `emscripten-starter-pack/dist/`):
 
 ```bash
-emcc hello.c -o hello.html
+emscripten-starter-pack/scripts/build.sh       # bash
+# or
+powershell -File emscripten-starter-pack/scripts/build.ps1
 ```
 
-Open `hello.html` in a browser. You should see `"Hello, WebAssembly!"` printed.
+Option B — compile just the printf demo manually to `dist/hello.html`:
+
+```bash
+emcc emscripten-starter-pack/c/hello_stdio.c -o emscripten-starter-pack/dist/hello.html
+```
+
+Serve the repo root and open the generated page (serving is required so the browser can fetch the `.wasm` file):
+
+```bash
+python -m http.server 8000
+# then visit
+http://localhost:8000/emscripten-starter-pack/dist/hello.html
+```
+
+On Windows PowerShell, the same commands work if your environment is loaded (after running `./emsdk_env.ps1`).
+
+Note: Opening via `file://` will often fail because the page fetches the `.wasm` file.
+Use a local HTTP server so the browser allows the request.
 
 ---
 

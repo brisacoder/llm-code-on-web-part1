@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Standalone WASM: call _add(7,5)</title>
+  <title>Emscripten Starter Pack</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
@@ -10,44 +10,48 @@
   </style>
 </head>
 <body>
-  <h1>Standalone WebAssembly Demo</h1>
-  <p>This page loads <code>hello_export.wasm</code> and calls its exported function <code>_add</code>.</p>
-  <button id="run">Run</button>
-  <div id="out">Result: (not run)</div>
+  <h1>Emscripten Starter Pack</h1>
+  <p>Welcome! Pick a demo below. If a file 404s, run the build script first.</p>
+
+  <h2>1) Printf demo (C stdio)</h2>
+  <p>
+    Open <a href="../dist/hello.html">../dist/hello.html</a> — generated from <code>c/hello_stdio.c</code>.
+  </p>
+  <p>
+    If you haven’t built yet, run:
+    <code>emscripten-starter-pack/scripts/build.sh</code> (bash) or
+    <code>emscripten-starter-pack/scripts/build.ps1</code> (PowerShell).
+  </p>
+
+  <h2>2) Standalone export demo</h2>
+  <p>This demo loads <code>../dist/hello_export.wasm</code> and calls its exported function <code>_add(7, 5)</code>.</p>
+  <button id="run">Run _add(7,5)</button>
+  <div id="out">Status: waiting to run</div>
 
   <script type="module">
     const out = document.getElementById('out');
     const btn = document.getElementById('run');
 
-    async function loadWasm() {
-      const resp = await fetch('../dist/hello_export.wasm');
-      if (!resp.ok) throw new Error('Failed to fetch hello_export.wasm');
-      const bytes = await resp.arrayBuffer();
-
-      // No imports required for this module (pure function), but engines
-      // expect an object.
-      const { instance } = await WebAssembly.instantiate(bytes, {});
-
-      // Export name is `_add` (note the underscore) when built with EXPORTED_FUNCTIONS=_add
-      return instance.exports._add;
+    async function runAdd() {
+      try {
+        const resp = await fetch('../dist/hello_export.wasm');
+        if (!resp.ok) throw new Error('Missing ../dist/hello_export.wasm');
+        const bytes = await resp.arrayBuffer();
+        const { instance } = await WebAssembly.instantiate(bytes, {});
+        const add = instance.exports._add;
+        const result = add(7, 5);
+        out.textContent = `Result: ${result}`;
+      } catch (err) {
+        console.error(err);
+        out.innerHTML = [
+          'Could not load WASM. Likely not built yet.',
+          'Build with <code>emscripten-starter-pack/scripts/build.sh</code> (bash) or',
+          '<code>emscripten-starter-pack/scripts/build.ps1</code> (PowerShell), then refresh.',
+        ].join(' ');
+      }
     }
 
-    let addFn = null;
-    loadWasm()
-      .then(fn => { addFn = fn; })
-      .catch(err => {
-        console.error(err);
-        out.textContent = 'Failed to load WASM (see console)';
-      });
-
-    btn.addEventListener('click', () => {
-      if (!addFn) {
-        out.textContent = 'WASM not loaded yet. Try again in a moment.';
-        return;
-      }
-      const result = addFn(7, 5);
-      out.textContent = `Result: ${result}`;
-    });
+    btn.addEventListener('click', runAdd);
   </script>
 </body>
 </html>
