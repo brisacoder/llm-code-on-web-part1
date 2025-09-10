@@ -21,6 +21,7 @@ mkdir -p dist
 
 emcc c/add_and_log.c \
   -O3 --no-entry -s STANDALONE_WASM=1 \
+  -Wl,--allow-undefined \
   -Wl,--export=add_and_log \
   -o dist/add_and_log.wasm
 

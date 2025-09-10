@@ -71,6 +71,8 @@ emscripten-starter-pack/
   scripts/                    # build.sh / build.ps1
     build.sh
     build.ps1
+    clean.sh
+    clean.ps1
   web/index.html              # loads dist/hello_export.wasm
   dist/                       # build output (created by scripts)
 intro_to_wasm.md
@@ -100,7 +102,7 @@ Start a server from the repo root (pick one):
 - Node: `npx serve .`
 - VS Code: Live Server extension
 
-1) Top-level JS <-> Wasm demo
+1) Minimal JS <-> Wasm demo
 - Build the Wasm once:
   - PowerShell: `minimal-demo/scripts/build_add_and_log.ps1`
   - Bash: `minimal-demo/scripts/build_add_and_log.sh`

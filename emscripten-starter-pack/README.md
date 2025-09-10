@@ -7,9 +7,11 @@ This folder contains a starter environment for compiling C to WebAssembly using 
 - c/hello_stdio.c - printf demo (generates HTML runner)
 - c/hello_export.c - pure function demo (exports `_add`)
 - web/index.html - loads `dist/hello_export.wasm` and calls `_add`
-- scripts/build.sh - Bash build script
-- scripts/build.ps1 - PowerShell build script
-- dist/ - output folder for build artifacts
+ - scripts/build.sh - Bash build script
+ - scripts/build.ps1 - PowerShell build script
+ - scripts/clean.sh - Bash clean script (removes dist/ and stray web artifacts)
+ - scripts/clean.ps1 - PowerShell clean script
+ - dist/ - output folder for build artifacts
 
 ## Quick Start
 1) Install the SDK
@@ -28,8 +30,12 @@ This folder contains a starter environment for compiling C to WebAssembly using 
 3) Run in a browser
 - Serve the repo root: `python3 -m http.server 8080`
 - Open:
- - http://localhost:8080/emscripten-starter-pack/dist/hello.html
+  - http://localhost:8080/emscripten-starter-pack/dist/hello.html
   - http://localhost:8080/emscripten-starter-pack/web/index.html
+
+4) Clean outputs (optional)
+- Bash: `emscripten-starter-pack/scripts/clean.sh`
+- PowerShell: `emscripten-starter-pack/scripts/clean.ps1`
 
 ## What You'll Learn
 - How Emscripten compiles C to WebAssembly
