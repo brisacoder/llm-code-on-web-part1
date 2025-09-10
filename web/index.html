@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <h1>JS ↔ Wasm Round Trip</h1>
+  <h1>JS <-> Wasm Round Trip</h1>
   <p>This demo calls a Wasm function that calls back into JS, then returns a value.</p>
 
   <button id="run">Run add_and_log(7, 5)</button>
@@ -33,7 +33,7 @@
     // Instantiate the precompiled Wasm file (same folder)
     let instance;
     async function init() {
-      const response = await fetch("./add_and_log.wasm");
+      const response = await fetch("./dist/add_and_log.wasm");
       // Prefer streaming when server sets application/wasm; fallback otherwise.
       try {
         if (WebAssembly.instantiateStreaming) {
@@ -68,3 +68,5 @@
   </script>
 </body>
 </html>
+
+

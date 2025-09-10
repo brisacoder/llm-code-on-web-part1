@@ -38,9 +38,9 @@ graph TD
 * **Definition**: A compiler toolchain (built on LLVM/Clang) that takes C/C++ (and anything that compiles to LLVM IR) and outputs WebAssembly plus a layer of JavaScript “glue code.”
 * **How it works**:
 
-  * Replaces the C standard library (`libc`) calls with **JavaScript shims** (virtual filesystem, sockets via WebSockets, stdout → browser console).
+  * Replaces the C standard library (`libc`) calls with **JavaScript shims** (virtual filesystem, sockets via WebSockets, stdout -> browser console).
   * Lets legacy codebases believe they are running on a POSIX-like OS, even though they’re inside a browser sandbox.
-* **Use cases**: Porting large C/C++ projects to the web (e.g., CPython → Pyodide, SDL games, OpenCV in browser, NumPy).
+* **Use cases**: Porting large C/C++ projects to the web (e.g., CPython -> Pyodide, SDL games, OpenCV in browser, NumPy).
 * **Mental model**: *Fake a Unix-like OS in the browser by redirecting syscalls through JavaScript.*
 
 ---
@@ -103,7 +103,7 @@ graph LR
 
 ## Browser vs. Node (mental model)
 
-* **Browser path**: JS/DOM ↔ Wasm. You pass imports from JS; Wasm calls them. Files/sockets are emulated or backed by browser storage/APIs.
+* **Browser path**: JS/DOM <-> Wasm. You pass imports from JS; Wasm calls them. Files/sockets are emulated or backed by browser storage/APIs.
 * **Node/WASI path**: Host provides WASI imports; module starts like a tiny process with sandboxed pre-opened directories and a minimal syscall surface.
 
 ## Feature notes (quick)
@@ -128,7 +128,7 @@ graph LR
 
 1. Read this intro.
 2. Skim the OS Illusion stack below to see how high-level runtimes (e.g., Python) “believe” they have an OS.
-3. Study the JS–Wasm round-trip in the section below (browser flow: JS → Wasm → JS import → return).
+3. Study the JS–Wasm round-trip in the section below (browser flow: JS -> Wasm -> JS import -> return).
 4. Review a syscall’s journey across boundaries in the Syscall Round Trip section below.
 5. Follow the Install & Run section in [README](./README.md#install--run-lecture-quickstart) and run the demos.
 
@@ -238,4 +238,5 @@ sequenceDiagram
     Wasm-->>JS: return 12
     JS->>DOM: Render result "12"
 ```
+
 

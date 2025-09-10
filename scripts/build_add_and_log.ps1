@@ -14,16 +14,18 @@ if (-not $emcc) {
 $root = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
 Set-Location $root
 
-Write-Host "[1/1] Building web/c/add_and_log.c -> web/add_and_log.wasm"
+Write-Host "[1/1] Building web/c/add_and_log.c -> web/dist/add_and_log.wasm"
 
 # Notes:
 #  --no-entry            -> no start function (library-style)
 #  -s STANDALONE_WASM=1  -> produce a .wasm that can run without JS glue
 #  -Wl,--export=add_and_log -> export symbol as 'add_and_log' (no underscore)
 
+if (-not (Test-Path -Path 'web/dist')) { New-Item -ItemType Directory -Path 'web/dist' | Out-Null }
+
 emcc web/c/add_and_log.c `
   -O3 --no-entry -s STANDALONE_WASM=1 `
   -Wl,--export=add_and_log `
-  -o web/add_and_log.wasm
+  -o web/dist/add_and_log.wasm
 
 Write-Host "Build complete. Serve repo root and open http://localhost:8000/web/index.html"
