@@ -128,9 +128,9 @@ graph LR
 
 1. Read this intro.
 2. Skim the OS Illusion stack below to see how high-level runtimes (e.g., Python) “believe” they have an OS.
-3. Study the round-trip flow (JS → Wasm → JS import → return) in `round_trip_flow.md`.
+3. Study the JS–Wasm round-trip in the section below (browser flow: JS → Wasm → JS import → return).
 4. Review a syscall’s journey across boundaries in the Syscall Round Trip section below.
-5. Follow [install.md](./install.md) and run the demos.
+5. Follow the Install & Run section in [README](./README.md#install--run-lecture-quickstart) and run the demos.
 
 ## Mini-FAQ
 
@@ -205,4 +205,37 @@ sequenceDiagram
 Notes:
 - In browsers, the “OS” is emulated via JS; persistence often uses IndexedDB or in-memory FS.
 - In WASI, access is explicit and limited; directories must be pre-opened by the host.
+
+---
+
+## JS-Wasm Round Trip (browser)
+
+How a browser page calls a Wasm function, logs from Wasm via an imported JS function, and receives the return value.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as User
+    participant DOM as Browser/DOM
+    participant JS as JavaScript (V8/SpiderMonkey)
+    participant Wasm as WebAssembly Runtime
+    participant JIT as JIT/Codegen
+    participant CPU as CPU (OS scheduler)
+
+    User->>DOM: Click "Run"
+    DOM->>JS: onclick handler
+    JS->>Wasm: instance.exports.add_and_log(7, 5)
+    Note right of Wasm: Validate & call compiled function
+    Wasm->>JIT: Use precompiled machine code
+    JIT->>CPU: Execute native instructions
+    CPU-->>Wasm: Produce sum = 12
+
+    Note over Wasm,JS: Back path: Wasm calls an imported JS function
+    Wasm->>JS: env.log_i32(12)
+    JS->>DOM: console.log("WASM says:", 12)
+
+    Note over Wasm: Return to caller
+    Wasm-->>JS: return 12
+    JS->>DOM: Render result "12"
+```
 
