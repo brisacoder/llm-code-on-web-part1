@@ -1,11 +1,33 @@
 # Running LLM Code on the Web: Wasm/Pyodide, Part I
 
-This repo is Part I of a 3‑part series on running LLM‑generated code on the web. Here we focus on Wasm fundamentals and two minimal browser demos. Use the Install & Run section below for setup and running.
+This repo is Part I of a 3-part series on running LLM-generated code on the web. Here we focus on Wasm fundamentals and two minimal browser demos. Use the Install & Run section below for setup and running.
 
 Series roadmap
 - Part I (this repo): Wasm basics + minimal JS <-> Wasm demos
 - Part II: Pyodide in the browser + Node/Express integration for running Python (LLM‑generated) safely and interactively
-- Part III: Hardening and shipping — packaging strategies, caching, performance tips, and end‑to‑end workflows
+- Part III: Hardening and shipping - packaging strategies, caching, performance tips, and end-to-end workflows
+
+## Why run LLM-generated Data Science code in the browser (Pyodide/Wasm)?
+- Zero install friction: users open a link and run code. No Conda, no system Python, no native compilers.
+- Strong sandboxing by default: browser/Wasm isolates execution. No file system or network unless you explicitly allow it.
+- Privacy by design: sensitive data can stay on-device; small and medium workloads execute locally without uploading datasets.
+- Reproducibility that travels: ship a pinned package set (micropip) and deterministic init code so notebooks and snippets behave the same on macOS/Windows/Linux.
+- Cost and scale: shift interactive compute to the client; reserve servers for heavy jobs or collaboration.
+- Great UX for iteration: fast edit-run loops, rich visualizations in-canvas/DOM, and JS <-> Python data flow for UI controls.
+- Portability: the exact same experience across devices and OSes, including managed desktops where installs are restricted.
+- Governance-friendly: narrow, capability-based access makes security reviews simpler than desktop installs.
+- Works offline/edge: after assets are cached, keep running even with spotty connectivity.
+
+Know the limits
+- Heavy native dependencies (C-extensions) may not be available as pure-Python wheels; design around them or offload to a service.
+- Memory/CPU are bounded by the browser; long-running or big-data jobs still belong on a backend.
+
+## Automation and Server Mode (Node.js)
+- Programmatic execution: have an LLM generate Python, send it to a REST endpoint, execute in a controlled Pyodide runtime, and return results as JSON (stdout/stderr, figures, data frames serialized).
+- Simple API shape: `POST /execute { code, inputs }` to run; `GET /runs/:id` to fetch status/artifacts; optional SSE/WebSocket for live logs/streams.
+- Run on Node.js to bypass browser limits: execute the same Pyodide code under Node (server-side) when you need more memory/CPU, headless batch jobs, or trusted network/file access.
+- Leverage the Node ecosystem: authentication (JWT/OAuth), authorization/RBAC, rate limiting, CSRF, routing/middleware, logging/metrics, retries/timeouts, job queues, and caching.
+- Persist outputs and ensure traceability: mount Pyodide's virtual FS to persistent storage (IndexedDB in the browser; host disk in Node) to save Matplotlib/Seaborn plots, logs, and intermediate files. Store code + inputs + outputs together for reproducibility/auditing.
 
 ## 0) Install & Run
 - See [Install & Run](#install--run-lecture-quickstart) for SDK setup, local server, and quickstart
@@ -32,26 +54,34 @@ About exports
 
 ## Layout
 ```
-./
-├─ web/
-�  �� index.html                 # top-level demo (loads dist/add_and_log.wasm)
-│  └─ c/add_and_log.c            # source for the demo
-├─ scripts/
-│  ├─ build_add_and_log.ps1
-�  �� build_add_and_log.ps1
-�  �� build_add_and_log.sh
-�  �� clean.ps1 / clean.sh       # remove build artifacts (web/dist, pack/dist)
-│  ├─ c/                         # Emscripten samples
-│  ├─ scripts/                   # build.sh / build.ps1
-│  └─ web/index.html             # loads dist/hello_export.wasm
-├─ intro_to_wasm.md
-├─ README.md
-└─ LICENSE / .gitignore
+.
+web/
+  index.html                  # top-level demo (loads dist/add_and_log.wasm)
+  c/add_and_log.c             # source for the demo
+  dist/                       # build output (created by scripts)
+scripts/
+  build_add_and_log.ps1
+  build_add_and_log.sh
+  clean.ps1
+  clean.sh
+emscripten-starter-pack/
+  c/                          # Emscripten samples
+    hello_stdio.c
+    hello_export.c
+  scripts/                    # build.sh / build.ps1
+    build.sh
+    build.ps1
+  web/index.html              # loads dist/hello_export.wasm
+  dist/                       # build output (created by scripts)
+intro_to_wasm.md
+round_trip_flow.md
+README.md
+LICENSE
 ```
 
 ---
 
-# Install & Run (Lecture Quickstart)
+# Install & Run (Quickstart)
 
 This guide has two parts:
 - Quickstart to build and run the demos (with a local server).
