@@ -31,7 +31,7 @@ Know the limits
 
 ## 0) Install & Run
 - See [Install & Run](#install--run-lecture-quickstart) for SDK setup, local server, and quickstart
-- `web/index.html`: minimal JS <-> Wasm round-trip (build via `scripts/build_add_and_log.*`)
+- `minimal-demo/index.html`: minimal JS <-> Wasm round-trip (build via `minimal-demo/scripts/build_add_and_log.*`)
 
 ## 1) Foundations
 - [Intro to Wasm](intro_to_wasm.md): how Wasm runs; imports/exports; browser vs Node/WASI
@@ -42,28 +42,28 @@ Know the limits
 - [JS -> Wasm -> JS back-call and return values](intro_to_wasm.md#js-wasm-round-trip-browser)
 - [Syscall Round Trip](intro_to_wasm.md#syscall-round-trip-sequence)
 ## 3) Demos
-- Top-level demo: build `web/dist/add_and_log.wasm` with `scripts/build_add_and_log.ps1` (or `.sh`), then open `web/index.html` via a local server
+- Minimal demo: build `minimal-demo/dist/add_and_log.wasm` with `minimal-demo/scripts/build_add_and_log.ps1` (or `.sh`), then open `minimal-demo/index.html` via a local server
 - Emscripten pack demo: run `emscripten-starter-pack/scripts/build.*` and open `emscripten-starter-pack/web/index.html`
 
 Why two demos?
-- `web/dist/add_and_log.wasm`: a minimal, hand-wired JS <-> Wasm round-trip. Tiny C (`web/c/add_and_log.c`), no Emscripten runtime or glue; you manually instantiate and call the export.
+- `minimal-demo/dist/add_and_log.wasm`: a minimal, hand-wired JS <-> Wasm round-trip. Tiny C (`minimal-demo/c/add_and_log.c`), no Emscripten runtime or glue; you manually instantiate and call the export.
 - `emscripten-starter-pack`: the typical Emscripten toolchain flow. Can generate HTML/JS glue, demonstrates stdio/filesystem support, and a fuller project layout with multiple examples.
 About exports
-- Top-level demo: the function is exported via the linker flag `-Wl,--export=add_and_log` (see `scripts/build_add_and_log.*`). There is no separate “export-only” C file; the export comes directly from `add_and_log.c`.
+- Minimal demo: the function is exported via the linker flag `-Wl,--export=add_and_log` (see `minimal-demo/scripts/build_add_and_log.*`). There is no separate "export-only" C file; the export comes directly from `add_and_log.c`.
 - Starter pack: the `c/hello_export.c` example exists to explicitly show exporting a pure function using `-s EXPORTED_FUNCTIONS=_add` and loading it from `web/index.html`.
 
 ## Layout
 ```
 .
-web/
-  index.html                  # top-level demo (loads dist/add_and_log.wasm)
+minimal-demo/
+  index.html                  # minimal demo (loads dist/add_and_log.wasm)
   c/add_and_log.c             # source for the demo
   dist/                       # build output (created by scripts)
-scripts/
-  build_add_and_log.ps1
-  build_add_and_log.sh
-  clean.ps1
-  clean.sh
+  scripts/
+    build_add_and_log.ps1
+    build_add_and_log.sh
+    clean.ps1
+    clean.sh
 emscripten-starter-pack/
   c/                          # Emscripten samples
     hello_stdio.c
@@ -102,9 +102,9 @@ Start a server from the repo root (pick one):
 
 1) Top-level JS <-> Wasm demo
 - Build the Wasm once:
-  - PowerShell: `scripts/build_add_and_log.ps1`
-  - Bash: `scripts/build_add_and_log.sh`
-- Open: `http://localhost:8000/web/index.html`
+  - PowerShell: `minimal-demo/scripts/build_add_and_log.ps1`
+  - Bash: `minimal-demo/scripts/build_add_and_log.sh`
+- Open: `http://localhost:8000/minimal-demo/index.html`
 - Click “Run”. You should see console log “WASM says: 12” and “Result: 12”.
 
 2) Emscripten Starter Pack demo
@@ -119,7 +119,7 @@ Troubleshooting:
 
 ---
 
-# Emscripten SDK (concise)
+# Emscripten SDK
 - Install: https://emscripten.org/docs/getting_started/downloads.html
 - Verify: run `emcc -v` after loading `emsdk_env.sh` or `emsdk_env.ps1`.
 - Gotchas:
