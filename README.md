@@ -5,7 +5,7 @@ This repo is Part I of a 3-part series on running LLM-generated code on the web.
 ## Series roadmap
 
 - **Part I (this repo)**: Wasm basics + minimal JS ↔ Wasm demos
-- **Part II**: Pyodide in the browser + Node/Express integration for running Python (LLM‑generated) safely and interactively
+- **Part II**: Pyodide in the browser + Node/Express integration for running Python (LLM-generated) safely and interactively
 - **Part III**: Hardening and shipping - packaging strategies, caching, performance tips, and end-to-end workflows
 
 ## Why run LLM-generated Data Science code in the browser (Pyodide/Wasm)?
@@ -156,6 +156,31 @@ Key takeaways:
 
 ### JS ↔ Wasm ↔ JS Round Trip
 
+Why this matters for LLM‑generated code: in this repo, the primary host is Node.js. Host JS (Node) orchestrates execution, captures logs/metrics, and persists artifacts; Wasm is the fast, sandboxed compute box. The “round trip” is the contract between them. Host JS initiates work (passing inputs, buffers, and callbacks) → Wasm computes (compiled C/C++ or Python via Emscripten/Pyodide) → Wasm calls back into JS for logging, progress, or access to safe capabilities you expose → and finally returns results for storage or response serialization. The same pattern also works in the browser when you want a client‑side experience.
+
+How it connects to the bigger picture (Node focus):
+- Orchestration: Node owns routing, auth, rate limits, queues, and where results are stored; Wasm focuses on deterministic compute. LLM‑generated code plugs into this loop without owning the server.
+- Safety and governance: the only powers Wasm gets are the JS imports you provide (capability‑based). This enables precise guardrails and auditability in server environments.
+- Streaming outputs: prints/logs/progress flow back via JS callbacks; stream them over SSE/WebSockets, or write to durable logs.
+- Data movement: pass Node Buffers/TypedArrays (zero‑copy where possible) to keep throughput high; keep sensitive data on trusted hosts.
+- Browser parity (optional): the same contract works in the browser for interactive sandboxes and demos.
+
+Tiny Node host for the minimal demo (imports a single log function and calls the exported add_and_log):
+
+```javascript
+// node >= 18
+import { readFile } from 'node:fs/promises';
+
+const bytes = await readFile('minimal-demo/dist/add_and_log.wasm');
+const imports = { env: { log_i32: (x) => console.log('WASM says:', x) } };
+const { instance } = await WebAssembly.instantiate(bytes, imports);
+
+const result = instance.exports.add_and_log(7, 5);
+console.log('Result:', result);
+```
+
+The minimal demo is intentionally tiny: `add_and_log` computes a sum (Wasm) and calls `env.log_i32` (JS) to prove the back‑path works. In Pyodide‑based flows, `print()`/exceptions/plots take the same path and can be streamed to clients or persisted for audit.
+
 This diagram shows how JavaScript calls WebAssembly, which can call back into JavaScript, and return values:
 
 ```mermaid
@@ -186,6 +211,18 @@ sequenceDiagram
 ```
 
 ### Syscall Round Trip Sequence
+
+Why this matters for LLM‑generated code: “syscalls” define what code can actually do. On servers (our focus), you either:
+- run Emscripten‑style modules with explicit JS imports (as in this repo’s demos), or
+- target WASI (`wasm32-wasi`) and run them under a WASI host (e.g., Node’s `node:wasi`, Wasmtime), where you pre‑open directories and selectively enable clocks, randomness, args/env, and networking.
+
+Either way, you grant LLM‑authored code only the minimum capabilities—nothing more—keeping execution portable and auditable. In the browser (optional), Emscripten emulates POSIX‑like calls via safe JS shims (virtual FS, console, timers) so code “feels” the same without touching real disks or sockets.
+
+Bigger picture connections (Node/WASI):
+- Capability gating: the host decides which imports exist. No import ⟹ no power. Strong guardrails for production.
+- Reproducibility and audit: pre‑opened dirs and explicit imports make inputs/outputs traceable; snapshot code+data+artifacts alongside logs.
+- Security by default: there are no raw syscalls from Wasm; everything is brokered by JS or a WASI runtime.
+- Environment parity: keep the same “open/print” semantics in dev and prod across Node and WASI; add browser builds when you want a client demo.
 
 How a single `open()` flows from user code down to the host and back:
 
@@ -225,7 +262,6 @@ Notes:
 ---
 
 # Install & Run (Quickstart)
-# Install & Run (Quickstart)
 
 This guide has two parts:
 - Quickstart to build and run the demos (with a local server).
@@ -233,23 +269,36 @@ This guide has two parts:
 
 ---
 
-## Quickstart: Run the Browser Demos
+## Quickstart: run the demos (Browser or Node)
 
 Prerequisites:
-- Emscripten SDK installed and environment loaded so `emcc` is on PATH (see below if needed).
-- A local static file server (browsers block `fetch` from `file://`).
+- Emscripten SDK installed and environment loaded so `emcc` is on PATH (see below if needed)
+- A local static file server (browsers block `fetch` from `file://`)
+- Optional (Node path): Node.js 18+ for running the minimal demo directly under Node
 
-Start a server from the repo root (pick one):
+Start a static server from the repo root (pick one):
 - Python: `python -m http.server 8000` (or `py -m http.server 8000` on Windows)
 - Node: `npx serve .`
 - VS Code: Live Server extension
 
-1) Minimal JS <-> Wasm demo
+1) Minimal JS ↔ Wasm demo
 - Build the Wasm once:
-  - PowerShell: `scripts/build_add_and_log.ps1`
-  - Bash: `scripts/build_add_and_log.sh`
-- Open: `http://localhost:8000/web/index.html`
-- Click "Run". You should see console log "WASM says: 12" and "Result: 12".
+  - PowerShell: `minimal-demo/scripts/build_add_and_log.ps1`
+  - Bash: `minimal-demo/scripts/build_add_and_log.sh`
+- Open: `http://localhost:8000/minimal-demo/index.html`
+- Click "Run". You should see console log "WASM says: 12" and on-page "Result: 12".
+
+  Optional: run the minimal demo under Node (no browser)
+  - After building, run this with Node ≥ 18 from repo root:
+    ```javascript
+    // save as run-node.mjs (example)
+    import { readFile } from 'node:fs/promises';
+    const bytes = await readFile('minimal-demo/dist/add_and_log.wasm');
+    const imports = { env: { log_i32: (x) => console.log('WASM says:', x) } };
+    const { instance } = await WebAssembly.instantiate(bytes, imports);
+    console.log('Result:', instance.exports.add_and_log(7, 5));
+    ```
+    Then: `node run-node.mjs`
 
 2) Emscripten Starter Pack demo
 - Build:
@@ -260,6 +309,9 @@ Start a server from the repo root (pick one):
 Troubleshooting:
 - If you open via `file://`, you'll see CORS errors like "CORS request not http". Always use `http://localhost`.
 - In DevTools Network tab, ensure `.wasm` files return 200 and paths match the HTML.
+
+- Note: Both demos will fall back from `WebAssembly.instantiateStreaming(...)` to a non-streaming path if your server doesn't set the `application/wasm` MIME type.
+- Windows PowerShell: If script execution is blocked, either run the command with `-ExecutionPolicy Bypass -File <script.ps1>` or set `Set-ExecutionPolicy -Scope Process Bypass` for the current session.
 
 ---
 
@@ -342,23 +394,24 @@ python -m http.server 8000
 # Demos
 
 ## What's Available
-- **Top-level demo**: build `web/add_and_log.wasm` with `scripts/build_add_and_log.ps1` (or `.sh`), then open `web/index.html` via a local server
+- **Minimal demo**: build `minimal-demo/dist/add_and_log.wasm` with `minimal-demo/scripts/build_add_and_log.ps1` (or `.sh`), then open `minimal-demo/index.html` via a local server
 - **Emscripten pack demo**: run `emscripten-starter-pack/scripts/build.*` and open `emscripten-starter-pack/web/index.html`
 
 ## Repository Layout
 ```
 ./
-├─ web/
-│  ├─ index.html                 # top-level demo (loads add_and_log.wasm)
-│  └─ c/add_and_log.c            # source for the demo
-├─ scripts/
-│  ├─ build_add_and_log.ps1
-│  └─ build_add_and_log.sh
+├─ minimal-demo/
+│  ├─ c/
+│  │  └─ add_and_log.c            # tiny C function that calls back into JS
+│  ├─ dist/                        # created by build; contains add_and_log.wasm
+│  ├─ index.html                   # loads dist/add_and_log.wasm
+│  └─ scripts/
+│     ├─ build_add_and_log.ps1
+│     └─ build_add_and_log.sh
 ├─ emscripten-starter-pack/
-│  ├─ c/                         # Emscripten samples
-│  ├─ scripts/                   # build.sh / build.ps1
-│  └─ web/index.html             # loads dist/hello_export.wasm
-├─ intro_to_wasm.md
+│  ├─ c/                           # Emscripten samples (hello_stdio.c, hello_export.c)
+│  ├─ scripts/                     # build/clean scripts (.ps1/.sh)
+│  └─ web/index.html               # loads ../dist/hello_export.wasm
 ├─ README.md
-└─ LICENSE / .gitignore
+└─ LICENSE
 ```
