@@ -8,6 +8,21 @@ This repo is Part I of a 3-part series on running LLM-generated code on the web.
 - **Part II**: Pyodide in the browser + Node/Express integration for running Python (LLM-generated) safely and interactively
 - **Part III**: Hardening and shipping - packaging strategies, caching, performance tips, and end-to-end workflows
 
+## Motivation and real‑world use cases
+
+Across drivers, fleet operators, and OEMs, the analytics questions are often concrete and time‑sensitive. An LLM can draft the exact snippet needed, but the loop only works if we can execute that code instantly, securely, and—ideally—without installing anything. Representative asks include:
+
+- Relating terrain to behavior: quantify how elevation ties to typical cruising speeds on segments or trips (e.g., correlations between altitude and mean speed per window).
+- Detecting steering events: repair gaps in heading/compass signals (forward-fill), compute absolute changes between samples, and flag sharp turns using a high‑percentile cutoff (top decile; roughly “bigger than about 45°”).
+- Understanding fleet usage: produce rollups of route coverage and driver behavior, alongside environmental context; include distribution plots and summary statistics for key metrics.
+- Verifying control targets: compute the fraction of time a measured signal (like fuel rail pressure) strays outside a narrow tolerance band around its setpoint (for example, beyond ±5%).
+- Checking wheel speed consistency: for each trip, assess variability across the four wheel sensors and report the maximum standard deviation observed.
+
+Why this drives the execution model:
+- The LLM supplies bespoke data‑science code on the fly; users expect near‑instant runs and quick iterations on prompts/visuals.
+- Data should remain local when possible, and execution must be sandboxed with tight capability control.
+- Running inside the browser via Pyodide/Wasm delivers zero‑install, portable, privacy‑preserving compute; heavier jobs can fall back to the same codepaths under Node/WASI.
+
 ## Why run LLM-generated Data Science code in the browser (Pyodide/Wasm)?
 
 - **Zero install friction**: users open a link and run code. No Conda, no system Python, no native compilers.
@@ -24,6 +39,49 @@ This repo is Part I of a 3-part series on running LLM-generated code on the web.
 
 - Heavy native dependencies (C-extensions) may not be available as pure-Python wheels; design around them or offload to a service.
 - Memory/CPU are bounded by the browser; long-running or big-data jobs still belong on a backend.
+
+## Wasm/Pyodide vs. Docker‑per‑run (why/why not)
+
+When executing LLM‑generated code, two common approaches are: spin up a container per run (Docker/Kubernetes), or run in a Wasm/Pyodide sandbox (browser or Node/WASI). Each has a place:
+
+When Wasm/Pyodide shines
+- Zero‑install, instant start: load once in the browser; subsequent runs feel immediate. No image pulls, no cold‑start penalties.
+- Strong sandbox by default: no implicit file/network access; capability‑based imports keep blast radius small.
+- Privacy & offline: compute stays on the user’s device; cached assets keep working with spotty connectivity.
+- Elastic cost: push interactive/visual work to clients; reserve servers/containers for heavy batch jobs.
+- Portability: identical behavior across OSes and managed desktops without custom IT images.
+
+When Docker‑per‑run is the right tool
+- Heavy native stacks: large C/C++/CUDA dependencies not available for the web yet (or GPU required).
+- Long/parallel jobs: workloads that exceed browser memory/CPU budgets or require multi‑process orchestration.
+- Regulated data access: controlled access to internal networks, secrets, or specific storage mounts.
+- Non‑web IO: direct filesystem, specialized drivers, or protocols not exposed in browsers.
+
+Hybrid guidance
+- Use the browser (Wasm/Pyodide) for rapid iteration, small/medium datasets, and interactive plots/UI.
+- Mirror the same code paths under Node/WASI for server‑side replays, scheduled jobs, and larger data.
+- Fall back to Docker/K8s for heavyweight or specialized scenarios; treat the Wasm path as a fast preview and the container path as the production escalator.
+
+Operational contrasts
+- Startup latency: Wasm cache + HTTP CDN vs. pulling container images; Wasm is typically faster for first‑mile UX.
+- Isolation model: capability‑based sandbox (Wasm) vs. namespace/cgroup isolation (containers). Both are strong; threat models differ.
+- Observability: browser logs/telemetry via JS, artifacts via virtual FS; containers integrate with existing infra (logs/metrics/tracing/registries).
+- Supply chain: ship static web assets for Wasm vs. manage image registries and SBOMs for containers; both need provenance.
+
+Bottom line: start in the browser for speed, safety, and user experience; escalate to containers when physics or dependencies demand it.
+
+## Plots and interactive visualization in the browser
+
+Many analytics flows culminate in figures, dashboards, or exploratory widgets. Running code where the UI lives unlocks:
+
+- Native interactivity: libraries like Plotly, Vega‑Lite, and ECharts render directly in the DOM/WebGL with hover, zoom, selection, and linked brushing.
+- Low‑latency updates: recompute in Pyodide → update JS/Plotly traces instantly; great for prompt‑iterate cycles.
+- Zero‑copy UI integration: pass TypedArrays and JSON between Python and JS without server round‑trips.
+- Offline/edge visualization: keep insights usable even without a network connection.
+
+Notes
+- Matplotlib/Seaborn can render to canvas/SVG; for rich interactivity, prefer web‑native libraries (Plotly, Vega, ECharts) or use mpl‑to‑plotly adapters when needed.
+- For server‑side rendering, you can still generate static PNG/SVG in Node/WASI and stream to clients, but you’ll lose the fluid, client‑side interactions.
 
 ## Automation and Server Mode (Node.js)
 
