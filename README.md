@@ -473,3 +473,28 @@ python -m http.server 8000
 ├─ README.md
 └─ LICENSE
 ```
+
+---
+
+## References & resources
+
+Core projects
+- Pyodide: https://pyodide.org
+- WebAssembly (Wasm): https://webassembly.org
+- WASI (WebAssembly System Interface): https://github.com/WebAssembly/WASI
+- Emscripten: https://emscripten.org
+- Node.js WASI (node:wasi): https://nodejs.org/api/wasi.html
+
+Wasm runtimes (server/CLI/edge)
+- Wasmtime: https://wasmtime.dev
+- Wasmer: https://wasmer.io
+- WasmEdge: https://wasmedge.org
+
+Docs and references
+- MDN WebAssembly guide: https://developer.mozilla.org/docs/WebAssembly
+- WebAssembly core spec: https://www.w3.org/TR/wasm-core-2/
+
+Plotting/visualization (browser‑native)
+- Plotly.js: https://plotly.com/javascript/
+- Vega‑Lite: https://vega.github.io/vega-lite/
+- Apache ECharts: https://echarts.apache.org
